@@ -1,0 +1,38 @@
+NearByBusIntent find bus stops near {location}
+NearByBusIntent find bus stop near {location}
+NearByBusIntent find bus stops near by {location}
+NearByBusIntent find bus stop near by {location}
+NearByBusIntent what are the bus stops near {location}
+NearByBusIntent what are the bus stops near by {location}
+NearByBusIntent where are the bus stops near {location}
+NearByBusIntent where is the bus stop near {location}
+NearByBusIntent where is the bu stop near by {location}
+NearByBusIntent where are the bus stops near by {location}
+NearByTrainIntent find stations nearby {location}
+NearByTrainIntent find station nearby {location}
+NearByTrainIntent find train station nearby {location}
+NearByTrainIntent find train stations nearby {location}
+NearByTrainIntent what are the stations nearby {location}
+NearByTrainIntent what are the train stations nearby {location}
+
+DateTimeIntent {date} {time}
+DateTimeIntent {time} {date}
+DateTimeIntent {date}
+DateTimeIntent {time}
+DateTimeIntent at {date} {time}
+DateTimeIntent on {date} {time}
+DateTimeIntent at {date}
+DateTimeIntent on {date}
+DateTimeIntent at {time}
+DateTimeIntent on {time}
+
+AMAZON.YesIntent yes
+AMAZON.NoIntent no
+
+PlanPublicTransportIntent plan a trip
+PlanPublicTransportIntent plan a trip from {from} to {to}
+PlanPublicTransportIntent plan a trip to {to}
+PlanPublicTransportIntent plan a trip from {from}
+
+AMAZON.NextIntent next
+AMAZON.NextIntent next path
