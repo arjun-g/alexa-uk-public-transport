@@ -5,13 +5,17 @@ const Alexa = require('alexa-sdk'),
       location = require('./libs/location'),
       transport = require('./libs/transport')
 
-const APP_ID = '',
+const APP_ID = process.env.APP_ID,
       STOP_MESSAGE = 'Bye! Have a nice journey!',
-      HELP_MESSAGE = 'You can ask me about train stations, bus stops, tube stations near any place or plan a public transport between two places. What would you like me to help you with ?',
+      HELP_MESSAGE = 'You can ask me to plan a public transport between two places or know about train stations near any place. What would you like me to help you with ?',
       HELP_REPROMPT_MESSAGE = 'What would you like me to help you with ?',
+      HELP_TRAIN_MESSAGE = 'You can ask me to find train stations near any place. What would you like me to help you with ?',
+      HELP_TRAIN_REPROMPT_MESSAGE = 'What would you like me to help you with ?',
+      HELP_PLAN_MESSAGE = 'You can ask me to plan a trip between any two places using public transportation. What would you like me to help you with ?',
+      HELP_PLAN_REPROMPT_MESSAGE = 'What would you like me to help you with ?',
       CANNOT_FIND_LOCATION_MESSAGE = 'Sorry, I cannot find the location you specified. Bye!',
       CANNOT_FIND_NEARBY_STATION_MESSAGE = 'Sorry, I cannot find any train stations near by. Bye!',
-      CANNOT_FIND_ANYMORE_NEARBY_STATION_MESSAGE = 'Sorry, I cannot find any train stations near by. Bye!',
+      CANNOT_FIND_ANYMORE_NEARBY_STATION_MESSAGE = 'Sorry, I cannot find any more train stations near by. Bye!',
       CANNOT_FIND_TRAIN_SCHEDULED_MESSAGE = 'Cannot find any more trains scheduled.',
       CANNOT_FIND_NEARBY_BUS_STOP_MESSAGE = 'Sorry, I cannot find any bus stops near by. Bye!',
       CANNOT_FIND_ANYMORE_NEARBY_BUS_STOP_MESSAGE = 'Sorry, I cannot find any bus stops near by. Bye!'
@@ -40,11 +44,11 @@ function pathToSpeak(path) {
     if(path.mode === 'foot'){
         pathDescDesc = `walk for ${durationToSpeak(path.duration)} from ${path.from_point_name} to ${path.to_point_name} at ${path.departure_time}`
     }
-    else if(path.mode === 'train'){
-        pathDescDesc = `take a train from ${path.from_point_name} which departs at ${path.departure_time} and reaches ${path.to_point_name} in ${durationToSpeak(path.duration)}`
+    else if(path.mode === 'wait'){
+        pathDescDesc = `wait for ${durationToSpeak(path.duration)} ${path.arrival_time ? 'until ' + path.arrival_time : ''}`
     }
-    else if(path.mode === 'tube'){
-        pathDescDesc = `take a tube from ${path.from_point_name} which departs at ${path.departure_time} and reaches ${path.to_point_name} in ${durationToSpeak(path.duration)}`
+    else {
+        pathDescDesc = `take a ${path.mode} from ${path.from_point_name} which departs at ${path.departure_time} and reaches ${path.to_point_name} in ${durationToSpeak(path.duration)}`
     }
     return pathDescDesc
 }
@@ -52,26 +56,21 @@ function pathToSpeak(path) {
 exports.handler = function(event, context, callback) {
 
     var alexa = Alexa.handler(event, context, callback)
-    alexa.registerHandlers(handlers, trainHandlers, busHandlers, planPublicHandlers)
+    alexa.appId = APP_ID
+    alexa.registerHandlers(handlers, planPublicHandlers, trainHandlers)
     alexa.execute()
 
 }
 
 const handlers = {
     'LanuchRequest': function() {
-        this.emit(':tell', 'Welcome to public transport')
+        let speechOutput = HELP_MESSAGE
+        let reprompt = HELP_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
     },
     'NearByTrainIntent': function() {
         this.handler.state = 'TRAIN'
         this.emitWithState('NearByTrainIntent')
-    },
-    'NearByBusIntent': function() {
-        this.handler.state = 'BUS'
-        this.emitWithState('NearByBusIntent')
-    },
-    'NearByTubeIntent': function() {
-        this.handler.state = 'TUBE'
-        this.emitWithState('NearByTubeIntent')
     },
     'PlanPublicTransportIntent': function() {
         this.handler.state = 'PLAN_PUBLIC'
@@ -86,6 +85,15 @@ const handlers = {
         this.emit(':tell', STOP_MESSAGE)
     },
     'AMAZON.StopIntent': function() {
+        this.emit(':tell', STOP_MESSAGE)
+    },
+    'Unhandled': function() {
+        this.attributes = {}
+        let speechOutput = 'Sorry I cannot understand your query. ' + HELP_MESSAGE
+        let reprompt = HELP_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
+    },
+    'SessionEndedRequest': function() {
         this.emit(':tell', STOP_MESSAGE)
     }
 }
@@ -128,9 +136,18 @@ let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
                     this.attributes.stationIndex = 0
                     this.attributes.confirmFor = 'STATION'
                     let currentStation = stations[0]
-                    this.emit(':ask',
+                    let cardTitle = currentStation.name
+                    let cardDescription = `${currentStation.name} is ${getDistanceName(currentStation.distance)} away from ${currentLocation.fullLocationName}`
+                    let cardImage = {
+                        smallImageUrl: location.getMapImage(currentStation.latitude, currentStation.longitude),
+                        largeImageUrl: location.getMapImage(currentStation.latitude, currentStation.longitude)
+                    }
+                    this.emit(':askWithCard',
                               `I found ${stations.length} station${stations.length === 1 ? '' : 's'} near ${currentLocation.fullLocationName}. The closest is ${currentStation.name} which is ${getDistanceName(currentStation.distance)} away. Would you like to know its time tabled service updates ?`,
-                              `Say yes to know the time tabled service updates for ${currentStation.name} or no know about other near by stations`)
+                              `Say yes to know the time tabled service updates for ${currentStation.name} or no know about other near by stations`,
+                              cardTitle,
+                              cardDescription,
+                              cardImage)
                 }
             })
             break
@@ -173,9 +190,19 @@ let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
             }
             else{
                 let currentStation = this.attributes.stations[this.attributes.stationIndex]
-                this.emit(':ask',
+                let currentLocation = this.attributes.location
+                let cardTitle = currentStation.name
+                let cardDescription = `${currentStation.name} is ${getDistanceName(currentStation.distance)} away from ${currentLocation.fullLocationName}`
+                let cardImage = {
+                    smallImageUrl: location.getMapImage(currentStation.latitude, currentStation.longitude),
+                    largeImageUrl: location.getMapImage(currentStation.latitude, currentStation.longitude)
+                }
+                this.emit(':askWithCard',
                           `${currentStation.name} is ${getDistanceName(currentStation.distance)} away from ${currentLocation.fullLocationName}. Would you like to know its time tabled service updates ?`,
-                          `Say yes to know the time tabled service updates for ${currentStation.name} or no know about other near by stations`)
+                          `Say yes to know the time tabled service updates for ${currentStation.name} or no know about other near by stations`,
+                          cardTitle,
+                          cardDescription,
+                          cardImage)
             }
             case 'TRAIN':
             this.emit(':tell',STOP_MESSAGE)
@@ -216,6 +243,26 @@ let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
                       `For what time do you like to know the time table for ${this.attributes.station.name} ?`,
                       `Say the time for which you like to know the time table for ${this.attributes.station.name} ?`)
         }
+    },
+    'AMAZON.HelpIntent': function() {
+        let speechOutput = HELP_TRAIN_MESSAGE
+        let reprompt = HELP_TRAIN_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
+    },
+    'AMAZON.CancelIntent': function() {
+        this.emit(':tell', STOP_MESSAGE)
+    },
+    'AMAZON.StopIntent': function() {
+        this.emit(':tell', STOP_MESSAGE)
+    },
+    'Unhandled': function(){
+        this.attributes = {}
+        let speechOutput = 'Sorry I cannot understand your query. ' + HELP_MESSAGE
+        let reprompt = HELP_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
+    },
+    'SessionEndedRequest': function() {
+        this.emit(':tell', STOP_MESSAGE)
     }
 })
 
@@ -335,22 +382,40 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
             })
         }
         else if(!from && !to){
-            alexa.attributes.askFor = 'FROM'
+            this.attributes.askFor = 'FROM'
             this.emit(':ask',
                       `Ok let's do it. From where would you like to start your trip from ?`,
                       `If you give the starting location I will start planning the trip. Where would you like to start the strip from ?`)
         }
         else if(!from){
-            alexa.attributes.askFor = 'FROM'
-            this.emit(':ask',
+            location.findLatLong(to)
+            .then(locations => {
+                this.attributes.to = locations[0]
+                if(!this.attributes.to){
+                    cannotUnderstandTo(this)
+                }
+                else{
+                    this.attributes.askFor = 'FROM'
+                    this.emit(':ask',
                       `Ok sure. From where would you like to start your trip from ?`,
                       `If you give the starting location I will start planning the trip. Where would you like to start the strip from ?`)
+                }
+            })
         }
         else if(!to){
-            alexa.attributes.askFor = 'TO'
-            this.emit(':ask',
+            location.findLatLong(from)
+            .then(locations => {
+                this.attributes.from = locations[0]
+                if(!this.attributes.from){
+                    cannotUnderstandFrom(this)
+                }
+                else{
+                    this.attributes.askFor = 'TO'
+                    this.emit(':ask',
                       `Sure. Where would you like to go ?`,
                       `If you give me your destination I will start planning the trip. Where would you like go ?`)
+                }
+            })
         }
     },
     'LocationIntent': function() {
@@ -361,15 +426,15 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
             location.findLatLong(locationName)
             .then(locations => {
                 if(locations.length === 0){
-                    alexa.emit(':ask',
+                    this.emit(':ask',
                             `Sorry I can't find ${locationName}. Can you be a little more specific or any near by well known place ?`,
                             `If you give me more details of the place or any well known place near by it would be more helpful. So, from where would you like to start your trip ?`)
                 }
                 else{
                     this.attributes.from = locations[0]
                     if(!this.attributes.to){
-                        alexa.attributes.askFor = 'TO'
-                        alexa.emit(':ask',
+                        this.attributes.askFor = 'TO'
+                        this.emit(':ask',
                                    `Good. Now where would you like to go ?`,
                                    `If you give me the place name I can proceed with planning the trip. So where would you like to go ?`)
                     }
@@ -384,15 +449,15 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
             location.findLatLong(locationName)
             .then(locations => {
                 if(locations.length === 0){
-                    alexa.emit(':ask',
+                    this.emit(':ask',
                             `Sorry I can't find ${locationName}. Can you be a little more specific or any near by well known place ?`,
                             `If you give me more details of the place or any well known place near by it would be more helpful. So, where would you like to go ?`)
                 }
                 else{
                     this.attributes.to = locations[0]
                     if(!this.attributes.from){
-                        alexa.attributes.askFor = 'FROM'
-                        alexa.emit(':ask',
+                        this.attributes.askFor = 'FROM'
+                        this.emit(':ask',
                                    `Good. Now where would you like to start your trip ?`,
                                    `If you give me the place name I can proceed with planning the trip. So where would you like to start your trip from ?`)
                     }
@@ -423,21 +488,34 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
                     if(route && route.route_parts && route.route_parts.length > 0){
                         this.attributes.route = route
                         this.attributes.routeIndex = 0
-                        this.emit(':ask',
+                        let googleMapUrl = location.getMapUrl(_.flatten(route.route_parts.map(route_part => {
+                            return [_.first(route_part.coordinates), _.last(route_part.coordinates)]
+                        })))
+                        utils.shorten(googleMapUrl)
+                        .then(shortenedMapUrl => {
+                            let cardTitle = `Travel plan from ${this.attributes.from.name} to ${this.attributes.to.name}`
+                            let cardDescription = `If you start at ${route.departure_time} you may reach your destination in ${durationToSpeak(route.duration)}. Here is the map ${shortenedMapUrl}`
+                            this.emit(':askWithCard',
                                 `OK, here is the plan. If you start at ${route.departure_time} you may reach your destination in ${durationToSpeak(route.duration)}. ${route.route_parts.length > 1 ? 'First, ': ''} ${pathToSpeak(route.route_parts[0])}`,
-                                `You can ask me to repeat this or ${route.route_parts.length > 1 ? 'read the next path': 'exit' }`)
+                                `You can ask me to repeat this or ${route.route_parts.length > 1 ? 'read the next path': 'exit' }`,
+                                cardTitle,
+                                cardDescription)
+                        })
                     }
                     else {
-                        this.emit(':tell', `Sorry I am unable to plan a trip between ${this.attributes.from.name} and ${this.attributes.to.name} on the time you asked. Please try for different time or between deifferent locations. Thank you.`)
+                        this.emit(':tell', `Sorry I am unable to plan a trip between ${this.attributes.from.name} and ${this.attributes.to.name} on the time you asked. Please try for different time or between different locations. Thank you.`)
                     }
                 })
             }
         }
         else if(time && !date){
-
+            this.attributes.date = Date.today().toString('yyyy-MM-dd')
+            this.emitWithState('DateTimeIntent')
         }
         else if(!time){
-
+            this.emit(':ask',
+                    `Ok. At what time would you like to plan the trip for ?`,
+                    `If you give the time for which you would like to plan the trip I will start planning immediatly. So, at what time would you like to plan the trip for ?`)
         }
     },
     'AMAZON.YesIntent': function() {
@@ -446,6 +524,19 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
             this.emit(':ask',
                       `Nice. When do you want to plan the travel ?`,
                       `If you give me the date and time you want to travel `)
+            break
+        }
+    },
+    'AMAZON.NoIntent': function() {
+        switch(this.attributes.confirmFor){
+            case 'LOCATION':
+            delete this.attributes.confirmFor
+            delete this.attributes.from
+            delete this.attributes.to
+            delete this.attributes.askFor
+            this.emit(':ask',
+                      `OK! Let's start over again. From where would you like to start your trip from ?`,
+                      `If you give the starting location I will start planning the trip. Where would you like to start the strip from ?`)
             break
         }
     },
@@ -458,13 +549,49 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
             }
             else{
                 this.emit(':ask',
-                    `${(route.route_parts.length - 1) === this.attributes.routeIndex ? 'Finally, ': 'Next, '} ${pathToSpeak(route.route_parts[this.attributes.routeIndex])}`,
+                    `${(route.route_parts.length - 1) === this.attributes.routeIndex ? 'Finally, ': 'Next, '} ${pathToSpeak(route.route_parts[this.attributes.routeIndex])}. ${(route.route_parts.length - 1) === this.attributes.routeIndex ? '. You will reach you destination': ''}`,
                     `You can ask me to repeat this or ${(route.route_parts.length - 1) > this.attributes.routeIndex ? 'read the next path': 'exit' }`)
             }
         }
         else {
             this.emit(':tell', `${randomCantUnderstandMessage()}`)
         }
+    },
+    'AMAZON.RepeatIntent': function() {
+        if(this.attributes.route){
+            let route = this.attributes.route
+            if(this.attributes.routeIndex === route.route_parts.length){
+                this.emit(':tell', `That\'s it you would have already reached you destination. ${STOP_MESSAGE}`)
+            }
+            else{
+                this.emit(':ask',
+                    `Ok let me repeat it again. ${pathToSpeak(route.route_parts[this.attributes.routeIndex])}.  ${(route.route_parts.length - 1) === this.attributes.routeIndex ? '. You would have reached your destination': ''}`,
+                    `You can ask me to repeat this again or ${(route.route_parts.length - 1) > this.attributes.routeIndex ? 'read the next path': 'exit' }`)
+            }
+        }
+        else {
+            this.emit(':tell', `${randomCantUnderstandMessage()}`)
+        }
+    },
+    'AMAZON.HelpIntent': function() {
+        let speechOutput = HELP_PLAN_MESSAGE
+        let reprompt = HELP_PLAN_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
+    },
+    'AMAZON.CancelIntent': function() {
+        this.emit(':tell', STOP_MESSAGE)
+    },
+    'AMAZON.StopIntent': function() {
+        this.emit(':tell', STOP_MESSAGE)
+    },
+    'Unhandled': function(){
+        this.attributes = {}
+        let speechOutput = 'Sorry I cannot understand your query. ' + HELP_MESSAGE
+        let reprompt = HELP_REPROMPT_MESSAGE
+        this.emit(':ask', speechOutput, reprompt)
+    },
+    'SessionEndedRequest': function() {
+        this.emit(':tell', STOP_MESSAGE)
     }
 })
 

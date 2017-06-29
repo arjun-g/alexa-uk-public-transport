@@ -31,18 +31,28 @@ describe('Alexa UK Transport', function () {
 
     it('test', function (done) {
         this.timeout(20000)
-        alexa.spoken('plan a trip from {big ben} to {downing street}', (error, response) => {
-            // console.log('RESPONSE', error, response)
-            alexa.spoken('yes', (error, response) => {
-                alexa.spoken('on {2017-06-30} {09:00}', (error, response) => {
-                    alexa.spoken('next', (error, response) => {
-                        alexa.spoken('next', (error, response) => {
-                            alexa.spoken('next', (error, response) => {
-                                done()
-                            })  
-                        })  
-                    })    
-                })    
+        alexa.spoken('plan a trip from {wembley stadium}', (error, response) => {
+            alexa.intended('LocationIntent', {location: 'downing street'}, (error, response) => {
+                alexa.spoken('no', () => {
+                    alexa.spoken('plan a trip from {wembley stadium}', (error, response) => {
+                        alexa.intended('LocationIntent', {location: 'downing street'}, (error, response) => {
+                            alexa.spoken('yes', () => {
+                                alexa.intended('DateTimeIntent', { time: '17:00' }, () => {
+                                    done()
+                                })
+                            })
+                        })
+                    })
+                })
+            })
+        })
+    })
+
+    xit('test', function (done) {
+        this.timeout(20000)
+        alexa.spoken('find stations nearby {wembley stadium}', (error, response) => {
+            alexa.spoken('yes', () => {
+                done()
             })
         })
     })

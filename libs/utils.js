@@ -4,7 +4,8 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY,
 
 module.exports.shorten = (url) => {
     return new Promise((resolve, reject) => {
-        googleUrl.shorten(url, (er, shortUrl) => {
+        googleUrl.shorten(url, (err, shortUrl) => {
+            console.log('SHORT URL', url, err, shortUrl)
             resolve(shortUrl)
         })
     })

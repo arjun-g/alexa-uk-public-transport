@@ -1,5 +1,6 @@
 const request = require('request'),
-      GOOGLE_API_KEY = process.env.GOOGLE_API_KEY
+      GOOGLE_API_KEY = process.env.GOOGLE_API_KEY,
+      _ = require('lodash')
 
 module.exports.findLatLong = locationName => {
     return new Promise((resolve, reject) => {
@@ -33,4 +34,12 @@ module.exports.findLatLong = locationName => {
 
 module.exports.getMapImage = (lat, lng) => {
     return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=600x400&maptype=roadmap%20&scale=2&key=${GOOGLE_API_KEY}&markers=color:black%7C${lat},${lng}`
+}
+
+module.exports.getMapUrl = (coordinates) => {
+    console.log('COORDINATES', coordinates)
+    let origin = _.first(coordinates).reverse().join(',')
+    let destination = _.last(coordinates).reverse().join(',')
+    let waypoints = _.map(coordinates.slice(1, coordinates.length - 1), coordinate => coordinate.reverse().join(',')).join('|')
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}`
 }

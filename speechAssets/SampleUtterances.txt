@@ -1,19 +1,23 @@
-NearByBusIntent find bus stops near {location}
-NearByBusIntent find bus stop near {location}
-NearByBusIntent find bus stops near by {location}
-NearByBusIntent find bus stop near by {location}
-NearByBusIntent what are the bus stops near {location}
-NearByBusIntent what are the bus stops near by {location}
-NearByBusIntent where are the bus stops near {location}
-NearByBusIntent where is the bus stop near {location}
-NearByBusIntent where is the bu stop near by {location}
-NearByBusIntent where are the bus stops near by {location}
 NearByTrainIntent find stations nearby {location}
+NearByTrainIntent find any stations nearby {location}
 NearByTrainIntent find station nearby {location}
 NearByTrainIntent find train station nearby {location}
 NearByTrainIntent find train stations nearby {location}
 NearByTrainIntent what are the stations nearby {location}
 NearByTrainIntent what are the train stations nearby {location}
+NearByTrainIntent for stations nearby {location}
+NearByTrainIntent for station nearby {location}
+NearByTrainIntent for any station nearby {location}
+NearByTrainIntent find stations near {location}
+NearByTrainIntent find any stations near {location}
+NearByTrainIntent find station near {location}
+NearByTrainIntent find train station near {location}
+NearByTrainIntent find train stations near {location}
+NearByTrainIntent what are the stations near {location}
+NearByTrainIntent what are the train stations near {location}
+NearByTrainIntent for stations near {location}
+NearByTrainIntent for station near {location}
+NearByTrainIntent for any station near {location}
 
 DateTimeIntent {date} {time}
 DateTimeIntent {time} {date}
@@ -26,13 +30,12 @@ DateTimeIntent on {date}
 DateTimeIntent at {time}
 DateTimeIntent on {time}
 
-AMAZON.YesIntent yes
-AMAZON.NoIntent no
+LocationIntent {location}
+LocationIntent to {location}
+LocationIntent from {location}
+LocationIntent for {location}
 
-PlanPublicTransportIntent plan a trip
 PlanPublicTransportIntent plan a trip from {from} to {to}
-PlanPublicTransportIntent plan a trip to {to}
 PlanPublicTransportIntent plan a trip from {from}
-
-AMAZON.NextIntent next
-AMAZON.NextIntent next path
+PlanPublicTransportIntent plan a trip to {to}
+PlanPublicTransportIntent plan a trip

@@ -25,15 +25,6 @@
             ]
         },
         {
-            "intent": "NearByBusIntent",
-            "slots": [
-                {
-                    "name": "location",
-                    "type": "LOCATION_LIST"
-                }
-            ]
-        },
-        {
             "intent": "PlanPublicTransportIntent",
             "slots": [
                 {
@@ -56,6 +47,14 @@
                 {
                     "name": "time",
                     "type": "AMAZON.TIME"
+                }
+            ]
+        },{
+            "intent": "LocationIntent",
+            "slots": [
+                {
+                    "name": "location",
+                    "type": "LOCATION_LIST"
                 }
             ]
         }
