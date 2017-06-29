@@ -98,6 +98,7 @@ const handlers = {
     }
 }
 
+/** Handlers for finding nearby train stations */
 let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
     'NearByTrainIntent': function() {
         let data = this.event.request.intent.slots
@@ -266,6 +267,7 @@ let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
     }
 })
 
+/** Handlers for finding nearby bus stops - NOT IMPLEMENTED YET */
 let busHandlers = Alexa.CreateStateHandler('BUS', {
     'NearByBusIntent': function() {
         let data = this.event.request.intent.slots
@@ -354,10 +356,12 @@ let busHandlers = Alexa.CreateStateHandler('BUS', {
     }
 })
 
+/** Handlers for finding nearby tube stations - NOT IMPLEMENTED YET */
 let tubeHandlers = Alexa.CreateStateHandler('TUBE', {
 
 })
 
+/** Handlers for plannign trip between two places */
 let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
     'PlanPublicTransportIntent': function() {
         let from = this.event.request.intent.slots.from && this.event.request.intent.slots.from.value
