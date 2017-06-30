@@ -29,7 +29,7 @@ describe('Alexa UK Transport', function () {
         });
     })
 
-    it('test', function (done) {
+    it('trip planner - case 1', function (done) {
         this.timeout(20000)
         alexa.spoken('plan a trip from {wembley stadium}', (error, response) => {
             alexa.intended('LocationIntent', {location: 'downing street'}, (error, response) => {
@@ -48,7 +48,7 @@ describe('Alexa UK Transport', function () {
         })
     })
 
-    xit('test', function (done) {
+    it('nearby stations - case 1', function (done) {
         this.timeout(20000)
         alexa.spoken('find stations nearby {wembley stadium}', (error, response) => {
             alexa.spoken('yes', () => {
@@ -56,5 +56,7 @@ describe('Alexa UK Transport', function () {
             })
         })
     })
+
+    /** More Test cases will be updated soon */
 
 })

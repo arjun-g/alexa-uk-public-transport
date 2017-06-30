@@ -63,7 +63,7 @@ exports.handler = function(event, context, callback) {
 }
 
 const handlers = {
-    'LanuchRequest': function() {
+    'LaunchRequest': function() {
         let speechOutput = HELP_MESSAGE
         let reprompt = HELP_REPROMPT_MESSAGE
         this.emit(':ask', speechOutput, reprompt)
@@ -118,6 +118,34 @@ let trainHandlers = Alexa.CreateStateHandler('TRAIN', {
                               `Say yes to search train stations near ${currentLocation.fullLocationName} or no to know about other similar locations if any`)
                 }
             })
+        }
+        else{
+            this.emit(':ask',
+                      `Ok. Near which location do you want me to check for train stations ?`,
+                      `If you give me the location to search i will start searching for statiosn nearby ? For which location do you want me to check for stations ?`)
+        }
+    },
+    'LocationIntent': function() {
+        let data = this.event.request.intent.slots
+        if(data.location && data.location.value){
+            location.findLatLong(data.location.value)
+            .then(locations => {
+                if(locations.length === 0){
+                    this.emit(':tell', CANNOT_FIND_LOCATION_MESSAGE)
+                }
+                else{
+                    this.attributes.locations = locations
+                    this.attributes.locationIndex = 0
+                    this.attributes.confirmFor = 'LOCATION'
+                    let currentLocation = locations[0]
+                    this.emit(':ask',
+                              `Did you mean train stations near ${currentLocation.fullLocationName} ?`,
+                              `Say yes to search train stations near ${currentLocation.fullLocationName} or no to know about other similar locations if any`)
+                }
+            })
+        }
+        else {
+            this.emit(':tell', CANNOT_FIND_LOCATION_MESSAGE)
         }
     },
     'AMAZON.YesIntent': function() {
@@ -500,7 +528,7 @@ let planPublicHandlers = Alexa.CreateStateHandler('PLAN_PUBLIC', {
                             let cardTitle = `Travel plan from ${this.attributes.from.name} to ${this.attributes.to.name}`
                             let cardDescription = `If you start at ${route.departure_time} you may reach your destination in ${durationToSpeak(route.duration)}. Here is the map ${shortenedMapUrl}`
                             this.emit(':askWithCard',
-                                `OK, here is the plan. If you start at ${route.departure_time} you may reach your destination in ${durationToSpeak(route.duration)}. ${route.route_parts.length > 1 ? 'First, ': ''} ${pathToSpeak(route.route_parts[0])}`,
+                                `OK, here is the plan. If you start at ${route.departure_time} you may reach your destination in ${durationToSpeak(route.duration)}. Now, I will read out the direction and mode of transport one by one. If you ask me to repeat i will read it again and if you ask me to go next i will read out the next direction. ${route.route_parts.length > 1 ? 'First, ': ''} ${pathToSpeak(route.route_parts[0])}`,
                                 `You can ask me to repeat this or ${route.route_parts.length > 1 ? 'read the next path': 'exit' }`,
                                 cardTitle,
                                 cardDescription)
