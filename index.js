@@ -69,10 +69,12 @@ const handlers = {
         this.emit(':ask', speechOutput, reprompt)
     },
     'NearByTrainIntent': function() {
+        /** Jump to trainHandlers */
         this.handler.state = 'TRAIN'
         this.emitWithState('NearByTrainIntent')
     },
     'PlanPublicTransportIntent': function() {
+        /** Jump to planPublicHandlers */
         this.handler.state = 'PLAN_PUBLIC'
         this.emitWithState('PlanPublicTransportIntent')
     },
